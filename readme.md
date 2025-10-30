@@ -9,7 +9,7 @@ This project was inspired by the great [MLOps Zoomcamp](https://github.com/DataT
 ## Overview
 ![alt text](readme/mlops.png "Title")
 The full setup consists of three steps:
-1) Training - A Kubernetes Job runs the Titanic survival training script with sklearn and logs metrics and artifacts (the actual models) to MLflow. 
+1) Training - A Dockerized job runs the Titanic survival training script with sklearn and logs metrics and artifacts (the actual models) to MLflow. 
 2) Serving - The model is pulled and FastAPI delivers the prediction, a streamlit app serves as the user interface.
 3) Monitoring - Metrics about the API usage/performance are pushed to Prometheus/Grafana and shown in a dashboard.
 
@@ -36,7 +36,19 @@ The individual services are packaged as docker containers and setup with docker 
 
 **Create example model**
 
-Build the training image and submit the Kubernetes Job defined in `k8s/training-job.yaml`. This will register a new model version in MLflow and promote it to Production.
+Build the training image and execute it once to populate MLflow:
+
+```
+docker build -t mlops-training:latest training
+docker run --rm \
+	--network mlops_default \
+	--env MLFLOW_TRACKING_URI=http://mlflow:5000 \
+	--env MODEL_NAME=titanic-classifier \
+	--volume mlops_models:/mlruns \
+	mlops-training:latest
+```
+
+This registers a new model version in MLflow and promotes it to Production.
 
 **Note**: The UI will only work if there is one "production" model in mlflow.
 
@@ -49,16 +61,10 @@ Additionally, a common volume for all containers that use mlflow is created and 
 
 To initialize all services the command `docker compose up` can be used from the project folder.
 
-### 2) Training on Kubernetes
+### 2) Training Service
 The **training script** is located at `training/model_training.py`. It loads the Titanic passenger dataset, trains a preprocessing + RandomForest pipeline, and logs metrics and the serialized model back to MLflow.
 
-The accompanying Docker image no longer starts a Prefect agent; it simply installs dependencies and executes the script. To orchestrate the run, use Kubernetes:
-
-1. Build the training image: `docker build -t mlops-training:latest training`.
-2. Submit the job: `kubectl apply -f k8s/training-job.yaml`.
-3. Inspect progress with `kubectl get jobs` and `kubectl logs job/titanic-model-training`.
-
-By default the manifest targets the MLflow server exposed by docker-compose (`http://host.docker.internal:5000`). Update the environment variables in the manifest if your MLflow endpoint differs.
+The Docker image installs the requirements and runs the script directly. Kick off ad-hoc training runs with the `docker run` command shown above, or integrate it into your CI/CD pipeline.
 
 
 ### 4) FastAPI
@@ -86,11 +92,9 @@ This part was heavily inspired by https://github.com/Kludex/fastapi-prometheus-g
 **Nginx** acts as a lightweight reverse proxy that fronts the Streamlit UI and FastAPI service. Requests to `/` are routed to the Streamlit container, while `/api/` is forwarded to FastAPI. This provides a single entry point (`http://localhost`) for the platform.
 
 ## Limitations
-**Multiple host machines: Kubernetes**
+**Multiple host machines**
 
-This project is meant to be deployed on a single host machine. In practice, you might want to use Kubernetes to deploy it 
-on multiple instances to gain more isolation and scalability. **Kompose** could be an option to convert your docker compose file
-to Kubernetes yaml. 
+This project is meant to be deployed on a single host machine. In practice, you might adopt an orchestrator (e.g., Kubernetes, ECS) for additional isolation and scalability.
 
 **Storage on cloud**
 
