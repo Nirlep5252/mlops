@@ -1,13 +1,15 @@
-FROM continuumio/miniconda3
+FROM python:3.11-slim
 
-RUN mkdir /training
 WORKDIR /training
 
-COPY requirements.txt .
-RUN pip install -r requirements.txt
+# Upgrade pip first to ensure we get the latest manylinux wheels.
+RUN pip install --no-cache-dir --upgrade pip
 
-COPY . .
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
 
-RUN prefect config set PREFECT_API_URL=http://host.docker.internal:4200/api
+COPY . ./
+
 ENV MLFLOW_TRACKING_URI=http://mlflow:5000
-CMD ["sh","-c","prefect orion start --host 0.0.0.0 & sleep 25 && prefect deployment apply train-deployment.yaml & sleep 15 && prefect agent start -q 'default'"]
+
+ENTRYPOINT ["python", "model_training.py"]

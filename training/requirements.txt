@@ -1,6 +1,5 @@
-prefect
 mlflow
-sklearn
+scikit-learn
 numpy
 pandas
 matplotlib

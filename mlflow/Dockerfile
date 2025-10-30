@@ -7,4 +7,4 @@ RUN pip install -r requirements.txt
 
 EXPOSE 5000
 
-CMD ["sh", "-c", "mlflow server --backend-store-uri sqlite:////mlruns/mlflow.db --default-artifact-root file:///mlruns --host=0.0.0.0"]
+CMD ["sh", "-c", "mlflow server --backend-store-uri sqlite:////mlruns/mlflow.db --default-artifact-root file:///mlruns --host=0.0.0.0 --port 5000 --allowed-hosts '*' --cors-allowed-origins '*' "]

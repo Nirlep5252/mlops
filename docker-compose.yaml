@@ -1,7 +1,9 @@
-version: "3.9"
 services:
   api:
     build: api
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MODEL_NAME=titanic-classifier
     ports:
       - 8086:8086
     volumes:
@@ -9,18 +11,15 @@ services:
 
   app:
     build: app
+    depends_on:
+      - api
     ports:
       - 8501:8501
 
-  train:
-    build: training
-    ports:
-      - 4200:4200
-    volumes:
-      - models:/mlruns
-
   mlflow:
     build: mlflow
+    environment:
+      - MLFLOW_TRACKING_SERVER_ALLOWED_HOSTS=*
     ports:
       - 5000:5000
     volumes:
@@ -42,9 +41,22 @@ services:
       - prometheus
     ports:
       - 3000:3000
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
     volumes:
       - ./monitoring/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml
       - ./monitoring/dashboard.json:/etc/grafana/provisioning/dashboards/dashboard.json
       - ./monitoring/dashboard.yml:/etc/grafana/provisioning/dashboards/default.yml
+
+  nginx:
+    build: nginx
+    depends_on:
+      - app
+      - api
+    ports:
+      - 80:80
 volumes:
   models:
