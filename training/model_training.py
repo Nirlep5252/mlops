@@ -9,7 +9,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
 import mlflow
 from mlflow import MlflowClient
-from mlflow.exceptions import RestException
+from mlflow.exceptions import MlflowException, RestException
 
 mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000"))
 mlflow.set_experiment("Titanic-Survival")
@@ -90,7 +90,7 @@ def train():
         client = MlflowClient()
         try:
             client.get_registered_model(REGISTERED_MODEL_NAME)
-        except RestException:
+        except (RestException, MlflowException):
             client.create_registered_model(REGISTERED_MODEL_NAME)
 
         model_version = client.create_model_version(
