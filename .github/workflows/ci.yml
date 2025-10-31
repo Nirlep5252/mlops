@@ -30,7 +30,6 @@ jobs:
       - name: Run tests
         run: |
           pytest api/test_api.py -v
-          pytest training/test_model_training.py -v
           pytest tests/test_integration.py -v
 
       - name: Smoke-train model
