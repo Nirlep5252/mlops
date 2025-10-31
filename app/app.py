@@ -7,7 +7,7 @@ from requests.exceptions import RequestException
 # Allow overriding the API location so the app works both inside and outside docker-compose.
 API_BASE_URL = os.getenv("API_BASE_URL", "http://api:8086")
 
-st.title("Titanic Survival Predictor")
+st.title("MLOPs Assignment")
 
 pclass = st.selectbox("Passenger Class", options=[1, 2, 3], index=0)
 sex = st.selectbox("Sex", options=["male", "female"], index=0)
